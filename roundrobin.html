@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Round Robin Scheduler</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            font-size: 18px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4caf50;
+            color: white;
+        }
+    </style>
+    <script>
+        function runRoundRobin() {
+            const timeQuantum = parseInt(document.getElementById('timeQuantum').value);
+            const numProcesses = parseInt(document.getElementById('numProcesses').value);
+            const arrivalTimes = document.getElementById('arrivalTimes').value.split(',').map(Number);
+            const burstTimes = document.getElementById('burstTimes').value.split(',').map(Number);
+
+            const outputElement = document.getElementById('output');
+            outputElement.innerHTML = '';
+
+            let n = numProcesses;
+            let timer = 0;
+            let maxProcessIndex = 0;
+            let arrival = [...arrivalTimes];
+            let burst = [...burstTimes];
+            let wait = new Array(n).fill(0);
+            let turn = new Array(n).fill(0);
+            let queue = new Array(n).fill(0);
+            let tempBurst = [...burst];
+            let complete = new Array(n).fill(false);
+
+            while (timer < arrival[0]) {
+                timer++;
+            }
+            queue[0] = 1;
+
+            while (true) {
+                let flag = true;
+                for (let i = 0; i < n; i++) {
+                    if (tempBurst[i] !== 0) {
+                        flag = false;
+                        break;
+                    }
+                }
+                if (flag) {
+                    break;  // Exit the loop if all processes are complete
+                }
+
+                let processExecuted = false; // Add a flag to track whether any process was executed in this iteration
+
+                for (let i = 0; (i < n) && (queue[i] !== 0); i++) {
+                    let ctr = 0;
+                    while ((ctr < timeQuantum) && (tempBurst[queue[0] - 1] > 0)) {
+                        tempBurst[queue[0] - 1] -= 1;
+                        timer += 1;
+                        ctr++;
+
+                        checkNewArrival(timer, arrival, n, maxProcessIndex, queue);
+                    }
+                    if ((tempBurst[queue[0] - 1] === 0) && (complete[queue[0] - 1] === false)) {
+                        turn[queue[0] - 1] = timer;
+                        complete[queue[0] - 1] = true;
+                        processExecuted = true; // Set the flag to true if a process is executed
+                    }
+
+                    let idle = true;
+                    if (queue[n - 1] === 0) {
+                        for (let k = 0; k < n && queue[k] !== 0; k++) {
+                            if (complete[queue[k] - 1] === false) {
+                                idle = false;
+                            }
+                        }
+                    } else {
+                        idle = false;
+                    }
+
+                    if (idle) {
+                        timer++;
+                        checkNewArrival(timer, arrival, n, maxProcessIndex, queue);
+                    }
+
+                    queueMaintainence(queue, n);
+                }
+
+                if (!processExecuted) {
+                    // If no process was executed in this iteration, break the loop to prevent infinite looping
+                    break;
+                }
+            }
+
+            for (let i = 0; i < n; i++) {
+                turn[i] = turn[i] - arrival[i];
+                wait[i] = turn[i] - burst[i];
+            }
+
+            let avgWait = wait.reduce((sum, val) => sum + val, 0) / n;
+            let avgTT = turn.reduce((sum, val) => sum + val, 0) / n;
+
+            let outputHTML = "<h2>Output:</h2>";
+            outputHTML += "<table>";
+            outputHTML += "<tr><th>Program No.</th><th>Arrival Time</th><th>Burst Time</th><th>Wait Time</th><th>TurnAround Time</th></tr>";
+
+            for (let i = 0; i < n; i++) {
+                outputHTML += `<tr><td>${i + 1}</td><td>${arrival[i]}</td><td>${burst[i]}</td><td>${wait[i]}</td><td>${turn[i]}</td></tr>`;
+            }
+
+            outputHTML += "</table>";
+            outputHTML += `<p>Average wait time : ${avgWait}</p>`;
+            outputHTML += `<p>Average Turn Around Time : ${avgTT}</p>`;
+
+            outputElement.innerHTML = outputHTML;
+        }
+
+        function queueUpdation(queue, timer, arrival, n, maxProcessIndex) {
+            let zeroIndex = -1;
+            for (let i = 0; i < n; i++) {
+                if (queue[i] === 0) {
+                    zeroIndex = i;
+                    break;
+                }
+            }
+            if (zeroIndex === -1) return;
+            queue[zeroIndex] = maxProcessIndex + 1;
+        }
+
+        function checkNewArrival(timer, arrival, n, maxProcessIndex, queue) {
+            if (timer <= arrival[n - 1]) {
+                let newArrival = false;
+                for (let j = (maxProcessIndex + 1); j < n; j++) {
+                    if (arrival[j] <= timer) {
+                        if (maxProcessIndex < j) {
+                            maxProcessIndex = j;
+                            newArrival = true;
+                        }
+                    }
+                }
+                if (newArrival) queueUpdation(queue, timer, arrival, n, maxProcessIndex);
+            }
+        }
+
+        function queueMaintainence(queue, n) {
+            for (let i = 0; (i < n - 1) && (queue[i + 1] !== 0); i++) {
+                let temp = queue[i];
+                queue[i] = queue[i + 1];
+                queue[i + 1] = temp;
+            }
+        }
+
+        function resetPage() {
+            // Reload the page to reset all inputs and outputs
+            location.reload();
+        }
+    </script>
+</head>
+<body>
+    <h1>Round Robin Scheduler</h1>
+
+    <label for="timeQuantum">Time Quantum:</label>
+    <input type="number" id="timeQuantum" required>
+
+    <label for="numProcesses">Number of Processes:</label>
+    <input type="number" id="numProcesses" required>
+
+    <label for="arrivalTimes">Arrival Times (comma-separated):</label>
+    <input type="text" id="arrivalTimes" required>
+
+    <label for="burstTimes">Burst Times (comma-separated):</label>
+    <input type="text" id="burstTimes" required>
+
+    <button onclick="runRoundRobin()">Run Round Robin</button>
+    <button onclick="resetPage()">Reset</button>
+
+    <div id="output"></div>
+</body>
+</html>

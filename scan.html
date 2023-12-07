@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCAN Disk Scheduling</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            font-size: 18px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #inputLocations, #results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>SCAN Disk Scheduling</h1>
+
+    <label for="startingPosition">Starting Position:</label>
+    <input type="number" id="startingPosition" required>
+
+    <label for="direction">Select the direction:</label>
+    <select id="direction" required>
+        <option value="left">Left</option>
+        <option value="right">Right</option>
+    </select>
+
+    <label for="numProcesses">Number of Processes:</label>
+    <input type="number" id="numProcesses" min="2" max="9" required>
+
+    <button onclick="calculate()">Enter</button>
+
+    <div id="inputLocations"></div>
+
+    <button onclick="calculateScan()">Calculate SCAN</button>
+
+    <div id="results"></div>
+
+    <script>
+        function calculate() {
+            var numProcesses = document.getElementById("numProcesses").value;
+            var inputLocations = document.getElementById("inputLocations");
+
+            inputLocations.innerHTML = "<b>Input Locations:</b><br><br>";
+
+            for (var i = 1; i <= numProcesses; i++) {
+                inputLocations.innerHTML += "<label for='burstTime" + i + "'><b>Location</b> " + i + ": </label>";
+                inputLocations.innerHTML += "<input type='number' name='burstTimes[]' id='burstTime" + i + "' required>";
+            }
+        }
+
+        function calculateScan() {
+            var numProcesses = document.getElementById("numProcesses").value;
+            var burstTimes = [];
+
+            for (var i = 1; i <= numProcesses; i++) {
+                burstTimes.push(parseInt(document.getElementById("burstTime" + i).value));
+            }
+
+            var startingPosition = parseInt(document.getElementById("startingPosition").value);
+            var direction = document.getElementById("direction").value;
+
+            // SCAN algorithm logic (same as in the original prompt)
+            var diskSize = 200;
+            var seekCount = 0;
+            var seekSequence = [];
+
+            var left = [];
+            var right = [];
+
+            if (direction === "left") {
+                left.push(0);
+            } else if (direction === "right") {
+                right.push(diskSize - 1);
+            }
+
+            for (var i = 0; i < burstTimes.length; i++) {
+                if (burstTimes[i] < startingPosition) {
+                    left.push(burstTimes[i]);
+                }
+                if (burstTimes[i] > startingPosition) {
+                    right.push(burstTimes[i]);
+                }
+            }
+
+            left.sort(function(a, b) {
+                return b - a;
+            });
+
+            right.sort(function(a, b) {
+                return a - b;
+            });
+
+            var run = 2;
+            while (run-- > 0) {
+                if (direction === "left") {
+                    for (var i = 0; i < left.length; i++) {
+                        var curTrack = left[i];
+                        seekSequence.push(curTrack);
+                        seekCount += Math.abs(curTrack - startingPosition);
+                        startingPosition = curTrack;
+                    }
+                    direction = "right";
+                } else if (direction === "right") {
+                    for (var i = 0; i < right.length; i++) {
+                        var curTrack = right[i];
+                        seekSequence.push(curTrack);
+                        seekCount += Math.abs(curTrack - startingPosition);
+                        startingPosition = curTrack;
+                    }
+                    direction = "left";
+                }
+            }
+
+            var resultsContainer = document.getElementById("results");
+            resultsContainer.innerHTML = "<b>Total number of seek operations = </b>" + seekCount + "<br>";
+            resultsContainer.innerHTML += "<b>Seek Sequence is</b><br>";
+
+            for (var i = 0; i < seekSequence.length; i++) {
+                resultsContainer.innerHTML += seekSequence[i] + "<br>";
+            }
+
+            resultsContainer.innerHTML += " <button onclick='resetValues()'>Reset Values</button>";
+        }
+
+        function resetValues() {
+            document.getElementById("startingPosition").value = "";
+            document.getElementById("direction").value = "left";
+            document.getElementById("numProcesses").value = "";
+            document.getElementById("inputLocations").innerHTML = "";
+            document.getElementById("results").innerHTML = "";
+        }
+    </script>
+</body>
+</html>

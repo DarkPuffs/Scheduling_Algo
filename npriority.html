@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Non-Preemptive Priority Scheduling</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px 0;
+            color: #555;
+        }
+
+        input, button {
+            width: 250px;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            font-size: 18px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        p {
+            margin: 0;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Non-Preemptive Priority Scheduling</h2>
+
+<form id="priorityForm">
+    <label for="numProcesses">Enter the number of processes:</label>
+    <input type="number" id="numProcesses" required>
+
+    <div id="processDetails"></div>
+
+    <button type="button" onclick="simulateScheduling()">Simulate Priority Scheduling</button>
+</form>
+
+<div id="output"></div>
+
+<script>
+    class Process {
+        constructor(processId, priority, burstTime) {
+            this.processId = processId;
+            this.priority = priority;
+            this.burstTime = burstTime;
+        }
+    }
+
+    function addProcessDetails() {
+        const numProcesses = parseInt(document.getElementById('numProcesses').value);
+        const processDetailsDiv = document.getElementById('processDetails');
+
+        processDetailsDiv.innerHTML = "";  // Clear previous content
+
+        for (let i = 0; i < numProcesses; i++) {
+            const div = document.createElement('div');
+            div.innerHTML = `<label for="priority${i}">Priority for Process ${i + 1}:</label>
+                             <input type="number" id="priority${i}" required>
+                             <label for="burstTime${i}">Burst Time for Process ${i + 1}:</label>
+                             <input type="number" id="burstTime${i}" required>`;
+            processDetailsDiv.appendChild(div);
+        }
+    }
+
+    function simulateScheduling() {
+        const numProcesses = parseInt(document.getElementById('numProcesses').value);
+        const processes = [];
+
+        // Input the details of each process
+        for (let i = 0; i < numProcesses; i++) {
+            const priority = parseInt(document.getElementById(`priority${i}`).value);
+            const burstTime = parseInt(document.getElementById(`burstTime${i}`).value);
+
+            processes.push(new Process(i + 1, priority, burstTime));
+        }
+
+        // Sort the processes based on priority (lower priority first)
+        processes.sort((a, b) => a.priority - b.priority);
+
+        let currentTime = 0;
+        let totalTurnaroundTime = 0;
+        let totalWaitingTime = 0;
+
+        // Display header for the schedule table
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = "<p>Process\tPriority\tBurst Time\tTurnaround Time\tWaiting Time</p>";
+
+        // Iterate through processes and simulate scheduling
+        processes.forEach(process => {
+            // Calculate turnaround time and waiting time for the current process
+            const turnaroundTime = currentTime + process.burstTime; // End time of the process
+            const waitingTime = currentTime; // Time the process spends waiting in the ready queue
+
+            // Update total turnaround time and waiting time
+            totalTurnaroundTime += turnaroundTime;
+            totalWaitingTime += waitingTime;
+
+            // Display details for each process in the schedule
+            outputDiv.innerHTML += `<p>${process.processId}\t\t${process.priority}\t\t\t${process.burstTime}\t\t\t${turnaroundTime}\t\t\t${waitingTime}</p>`;
+
+            // Update current time for the next iteration
+            currentTime += process.burstTime;
+        });
+
+        // Calculate and display average turnaround time and average waiting time
+        const averageTurnaroundTime = totalTurnaroundTime / numProcesses;
+        const averageWaitingTime = totalWaitingTime / numProcesses;
+
+        outputDiv.innerHTML += `<p>Average Turnaround Time: ${averageTurnaroundTime}</p>`;
+        outputDiv.innerHTML += `<p>Average Waiting Time: ${averageWaitingTime}</p>`;
+    }
+
+    // Run addProcessDetails when the page loads
+    document.getElementById('numProcesses').addEventListener('input', addProcessDetails);
+    addProcessDetails();
+</script>
+
+</body>
+</html>
