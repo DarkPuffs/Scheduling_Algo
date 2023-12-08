@@ -51,10 +51,43 @@
 
         #results {
             margin-top: 20px;
-            padding: 15px;
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow-x: auto; /* Add horizontal scroll for small screens */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        /* New styles for the seek sequence table */
+        #seekSequenceTable {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        #seekSequenceTable th, #seekSequenceTable td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
         }
     </style>
 </head>
@@ -66,6 +99,7 @@
 
     <label for="direction">Select the direction:</label>
     <select id="direction" required>
+        <option value="" disabled selected>Please Select A Direction</option>
         <option value="left">Left</option>
         <option value="right">Right</option>
     </select>
@@ -79,7 +113,11 @@
 
     <button onclick="calculateScan()">Calculate SCAN</button>
 
-    <div id="results"></div>
+    <div id="results">
+        <div id="seekSequenceTable"></div>
+        <p id="seekCountText"></p>
+        <button onclick='resetValues()'>Reset Values</button>
+    </div>
 
     <script>
         function calculate() {
@@ -95,15 +133,27 @@
         }
 
         function calculateScan() {
+            var startingPosition = document.getElementById("startingPosition").value;
+            var direction = document.getElementById("direction").value;
             var numProcesses = document.getElementById("numProcesses").value;
+
+            // Validate empty fields
+            if (startingPosition === "" || direction === "" || numProcesses === "") {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            // Validate direction selection
+            if (direction !== "left" && direction !== "right") {
+                alert("Please select a valid direction.");
+                return;
+            }
+
             var burstTimes = [];
 
             for (var i = 1; i <= numProcesses; i++) {
                 burstTimes.push(parseInt(document.getElementById("burstTime" + i).value));
             }
-
-            var startingPosition = parseInt(document.getElementById("startingPosition").value);
-            var direction = document.getElementById("direction").value;
 
             // SCAN algorithm logic (same as in the original prompt)
             var diskSize = 200;
@@ -157,20 +207,23 @@
                 }
             }
 
-            var resultsContainer = document.getElementById("results");
-            resultsContainer.innerHTML = "<b>Total number of seek operations = </b>" + seekCount + "<br>";
-            resultsContainer.innerHTML += "<b>Seek Sequence is</b><br>";
-
+            // Display the seek sequence in a table
+            var seekSequenceTable = "<table id='seekSequenceTable'><thead><tr><th>Seek Sequence</th></tr></thead><tbody>";
             for (var i = 0; i < seekSequence.length; i++) {
-                resultsContainer.innerHTML += seekSequence[i] + "<br>";
+                seekSequenceTable += "<tr><td>" + seekSequence[i] + "</td></tr>";
             }
+            seekSequenceTable += "</tbody></table>";
 
+            // Display the result summary
+            var resultsContainer = document.getElementById("results");
+            resultsContainer.innerHTML = seekSequenceTable;
+            resultsContainer.innerHTML += "<p id='seekCountText'><b>Total number of seek operations = </b>" + seekCount + "</p>";
             resultsContainer.innerHTML += " <button onclick='resetValues()'>Reset Values</button>";
         }
 
         function resetValues() {
             document.getElementById("startingPosition").value = "";
-            document.getElementById("direction").value = "left";
+            document.getElementById("direction").value = "";
             document.getElementById("numProcesses").value = "";
             document.getElementById("inputLocations").innerHTML = "";
             document.getElementById("results").innerHTML = "";
