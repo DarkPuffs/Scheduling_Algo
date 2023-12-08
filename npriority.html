@@ -51,12 +51,39 @@
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: none;
         }
 
+        #outputTitle {
+        text-align: left;
+        margin-bottom: 10px;
+        }
         p {
             margin: 0;
             padding: 5px;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        #averageTurnaround, #averageWaiting {
+            margin-top: 10px;
+        }
+        
+    
     </style>
 </head>
 <body>
@@ -70,9 +97,26 @@
     <div id="processDetails"></div>
 
     <button type="button" onclick="simulateScheduling()">Simulate Priority Scheduling</button>
+    <button type="button" onclick="resetForm()">Reset</button>
 </form>
 
-<div id="output"></div>
+<div id="output">
+    <h2 id="outputTitle">Output:</h2> 
+    <table>
+        <thead>
+            <tr>
+                <th>Process</th>
+                <th>Priority</th>
+                <th>Burst Time</th>
+                <th>Turnaround Time</th>
+                <th>Waiting Time</th>
+            </tr>
+        </thead>
+        <tbody id="outputBody"></tbody>
+    </table>
+    <p id="averageTurnaround"></p>
+    <p id="averageWaiting"></p>
+</div>
 
 <script>
     class Process {
@@ -101,14 +145,27 @@
 
     function simulateScheduling() {
         const numProcesses = parseInt(document.getElementById('numProcesses').value);
+        
+        // Validate the number of processes
+         if (isNaN(numProcesses) || numProcesses <= 0) {
+            alert("Please enter a valid number of processes.");
+            return;
+        }
+        
         const processes = [];
 
         // Input the details of each process
         for (let i = 0; i < numProcesses; i++) {
-            const priority = parseInt(document.getElementById(`priority${i}`).value);
-            const burstTime = parseInt(document.getElementById(`burstTime${i}`).value);
+            const priority = document.getElementById(`priority${i}`).value.trim();
+            const burstTime = document.getElementById(`burstTime${i}`).value.trim();
 
-            processes.push(new Process(i + 1, priority, burstTime));
+           // Validate priority and burst time inputs
+           if (priority === "" || burstTime === "") {
+                alert("Please enter values for priority and burst time.");
+                return;
+            }
+
+            processes.push(new Process(i + 1, parseInt(priority), parseInt(burstTime)));
         }
 
         // Sort the processes based on priority (lower priority first)
@@ -119,8 +176,9 @@
         let totalWaitingTime = 0;
 
         // Display header for the schedule table
-        const outputDiv = document.getElementById('output');
-        outputDiv.innerHTML = "<p>Process\tPriority\tBurst Time\tTurnaround Time\tWaiting Time</p>";
+        const outputTable = document.getElementById('outputBody');
+        outputTable.innerHTML = ""; // Clear previous content
+
 
         // Iterate through processes and simulate scheduling
         processes.forEach(process => {
@@ -132,8 +190,14 @@
             totalTurnaroundTime += turnaroundTime;
             totalWaitingTime += waitingTime;
 
-            // Display details for each process in the schedule
-            outputDiv.innerHTML += `<p>${process.processId}\t\t${process.priority}\t\t\t${process.burstTime}\t\t\t${turnaroundTime}\t\t\t${waitingTime}</p>`;
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${process.processId}</td>
+                             <td>${process.priority}</td>
+                             <td>${process.burstTime}</td>
+                             <td>${turnaroundTime}</td>
+                             <td>${waitingTime}</td>`;
+              // Append the row to the table body
+              document.getElementById('outputBody').appendChild(row);
 
             // Update current time for the next iteration
             currentTime += process.burstTime;
@@ -143,14 +207,31 @@
         const averageTurnaroundTime = totalTurnaroundTime / numProcesses;
         const averageWaitingTime = totalWaitingTime / numProcesses;
 
-        outputDiv.innerHTML += `<p>Average Turnaround Time: ${averageTurnaroundTime}</p>`;
-        outputDiv.innerHTML += `<p>Average Waiting Time: ${averageWaitingTime}</p>`;
+        document.getElementById('averageTurnaround').innerText = `Average Turnaround Time: ${averageTurnaroundTime}`;
+        document.getElementById('averageWaiting').innerText = `Average Waiting Time: ${averageWaitingTime}`;
+     
+        // Show the table header
+        document.getElementById('output').style.display = 'block';
     }
+
+    function resetForm() {
+        // Clear input values
+        document.getElementById('numProcesses').value = '';
+        document.getElementById('processDetails').innerHTML = '';
+
+        // Clear output
+        document.getElementById('outputBody').innerHTML = '';
+        document.getElementById('averageTurnaround').innerText = '';
+        document.getElementById('averageWaiting').innerText = '';
+        
+        // Hide the table header again on reset  
+        document.getElementById('output').style.display = 'none';
+    }
+
 
     // Run addProcessDetails when the page loads
     document.getElementById('numProcesses').addEventListener('input', addProcessDetails);
     addProcessDetails();
 </script>
-
 </body>
 </html>
