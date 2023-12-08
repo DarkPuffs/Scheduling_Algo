@@ -73,6 +73,15 @@
             const arrivalTimes = document.getElementById('arrivalTimes').value.split(',').map(Number);
             const burstTimes = document.getElementById('burstTimes').value.split(',').map(Number);
 
+            if (isNaN(timeQuantum) || isNaN(numProcesses) || arrivalTimes.includes(NaN) || burstTimes.includes(NaN)) {
+                alert("Please enter valid numerical values for all inputs.");
+                return;
+            }
+
+            if (arrivalTimes.length !== numProcesses || burstTimes.length !== numProcesses) {
+                alert("Please provide arrival and burst times for all processes.");
+                return;
+            }
             const outputElement = document.getElementById('output');
             outputElement.innerHTML = '';
 
